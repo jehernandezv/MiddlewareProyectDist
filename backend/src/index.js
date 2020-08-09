@@ -5,26 +5,43 @@ var body_parser = require('body-parser');
 var axios = require('axios');
 var port = process.argv[2];
 var app = express();
+var server_1 = 'http://localhost:32300/api';
+var server_2 = 'http://localhost:33300/api';
+var server_3 = 'http://localhost:34020/api';
 
 app.use(cors());
 app.use(morgan('dev'));
 app.use(body_parser.urlencoded({ extended: false }));
 
-app.get('/', async (req,res) => {
-     sendRequestAxios(5000,'localhost',res);
-});
-    function sendRequestAxios(port,ip,res){
-    axios.get('http://'+ip+':'+port+'/api').then(async (response) => {
+app.get('/', async (req, res) => {
+    axios.get(server_1).then(async (response) => {
         await res.json({
-            message:response.data
+            message: response.data
         });
-    }).catch(async function (error) {
-      await res.json({
-           message:error.code
-       });
-      sendRequestAxios(6000,'localhost');
+    }).catch(function (error) {
+        if (!error.status) {
+            axios.get(server_2).then(async (response) => {
+                await res.json({
+                    message: response.data
+                });
+            }).catch(function (error) {
+                if (!error.status) {
+                    axios.get(server_3).then(async (response) => {
+                        await res.json({
+                            message: response.data
+                        });
+                    }).catch(function (error) {
+                        if (!error.status) {
+                            res.json({
+                                message: "No se ha logrado establecer conexión con los servidores"
+                            });
+                        }
+                    });
+                }
+            });
+        }
     });
-}
+});
 
 app.listen(port, function () {
     console.log('Example app server ubuntu1 listening on port ' + port + '!');
